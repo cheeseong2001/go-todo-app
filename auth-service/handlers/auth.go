@@ -97,3 +97,29 @@ func Login(c *gin.Context) {
 		"token":   token,
 	})
 }
+
+func ValidateToken(c *gin.Context) {
+	var request models.ValidateTokenRequest
+
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.IndentedJSON(http.StatusBadRequest, models.ValidateTokenResponse{
+			Valid: false,
+			Error: "Invalid request format",
+		})
+		return
+	}
+
+	userID, err := utils.ValidateJWT(request.Token)
+	if err != nil {
+		c.IndentedJSON(http.StatusUnauthorized, models.ValidateTokenResponse{
+			Valid: false,
+			Error: "Invalid or expired token",
+		})
+		return
+	}
+
+	c.IndentedJSON(http.StatusBadRequest, models.ValidateTokenResponse{
+		UserID: userID,
+		Valid:  true,
+	})
+}

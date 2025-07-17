@@ -19,5 +19,6 @@ func main() {
 
 	r.POST("/register", handlers.Register)
 	r.POST("/login", handlers.Login)
+	r.POST("/validate", handlers.ValidateToken)
 	r.Run(":8080")
 }
