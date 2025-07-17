@@ -61,7 +61,8 @@ func Login(c *gin.Context) {
 	}
 
 	var hashedPassword string
-	err := repository.DB.QueryRow(`SELECT password FROM users WHERE email = $1`, loginCredentials.Email).Scan(&hashedPassword)
+	var userID int
+	err := repository.DB.QueryRow(`SELECT id, password FROM users WHERE email = $1`, loginCredentials.Email).Scan(&userID, &hashedPassword)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			c.IndentedJSON(http.StatusUnauthorized, gin.H{
@@ -75,6 +76,7 @@ func Login(c *gin.Context) {
 		})
 		return
 	}
+
 	if !utils.CheckPasswordHash(loginCredentials.Password, hashedPassword) {
 		c.IndentedJSON(http.StatusUnauthorized, gin.H{
 			"error": "Invalid email or password",
@@ -82,7 +84,16 @@ func Login(c *gin.Context) {
 		return
 	}
 
+	token, err := utils.GenerateJWT(userID)
+	if err != nil {
+		c.IndentedJSON(http.StatusUnauthorized, gin.H{
+			"error": "Failed to generate token",
+		})
+		return
+	}
+
 	c.IndentedJSON(http.StatusOK, gin.H{
 		"message": "Login successful",
+		"token":   token,
 	})
 }
