@@ -1,0 +1,24 @@
+services:
+  auth-db:
+    image: postgres:latest
+    restart: always
+    shm_size: 128mb
+    environment:
+      POSTGRES_PASSWORD: example
+      POSTGRES_DB: auth-db
+    # networks:
+    #   - auth
+    volumes:
+      - auth-db-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+  # app:
+  #   image: 
+  #   networks:
+  #     - auth
+
+# networks:
+#   auth:
+
+volumes:
+  auth-db-data:
