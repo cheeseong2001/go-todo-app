@@ -6,19 +6,41 @@ services:
     environment:
       POSTGRES_PASSWORD: example
       POSTGRES_DB: auth-db
-    # networks:
-    #   - auth
     volumes:
       - auth-db-data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
-  # app:
-  #   image: 
-  #   networks:
-  #     - auth
+    networks:
+      - auth
 
-# networks:
-#   auth:
+  auth-service:
+    build: auth-service/
+    ports:
+      - "8080:8080"
+    networks:
+      - auth
+      
+  task-db:
+    image: postgres:latest
+    restart: always
+    shm_size: 128mb
+    environment:
+      POSTGRES_PASSWORD: example
+      POSTGRES_DB: task-db
+    volumes:
+      - task-db-data:/var/lib/postgresql/data
+    networks:
+      - task
+
+  task-service:
+    build: task-service/
+    ports:
+      - "8081:8080"
+    networks:
+      - task
+
+networks:
+  auth:
+  task:
 
 volumes:
   auth-db-data:
+  task-db-data:
