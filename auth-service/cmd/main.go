@@ -17,8 +17,12 @@ func main() {
 	}
 	r := gin.Default()
 
-	r.POST("/register", handlers.Register)
-	r.POST("/login", handlers.Login)
-	r.POST("/validate", handlers.ValidateToken)
+	auth := r.Group("/auth")
+	{
+		auth.POST("/register", handlers.Register)
+		auth.POST("/login", handlers.Login)
+		auth.POST("/validate", handlers.ValidateToken)
+	}
+
 	r.Run(":8080")
 }

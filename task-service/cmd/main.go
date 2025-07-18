@@ -20,9 +20,13 @@ func main() {
 
 	r.Use(middleware.JWTValidateMiddleware())
 
-	r.POST("/tasks", handlers.CreateTask)
-	r.GET("/tasks", handlers.GetTask)
-	r.GET("/tasks/:task_id", handlers.GetTaskByID)
-	r.DELETE("/tasks/:task_id/delete", handlers.DeleteTask)
+	tasks := r.Group("/tasks")
+	{
+		tasks.POST("/", handlers.CreateTask)
+		tasks.GET("/", handlers.GetTask)
+		tasks.GET("/:task_id", handlers.GetTaskByID)
+		tasks.DELETE("/:task_id", handlers.DeleteTask)
+	}
+
 	r.Run(":8080")
 }
