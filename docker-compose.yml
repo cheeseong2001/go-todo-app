@@ -4,17 +4,26 @@ services:
     restart: always
     shm_size: 128mb
     environment:
+      POSTGRES_USER: postgres
       POSTGRES_PASSWORD: example
       POSTGRES_DB: auth-db
     volumes:
       - auth-db-data:/var/lib/postgresql/data
     networks:
       - auth
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 10s
 
   auth-service:
     build: auth-service/
-    ports:
-      - "8080:8080"
+    depends_on:
+      auth-db:
+        condition: service_healthy
+        restart: true
     networks:
       - auth
       
@@ -23,18 +32,35 @@ services:
     restart: always
     shm_size: 128mb
     environment:
+      POSTGRES_USER: postgres
       POSTGRES_PASSWORD: example
       POSTGRES_DB: task-db
     volumes:
       - task-db-data:/var/lib/postgresql/data
     networks:
       - task
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 10s
 
   task-service:
     build: task-service/
-    ports:
-      - "8081:8080"
+    depends_on:
+      task-db:
+        condition: service_healthy
+        restart: true
     networks:
+      - task
+
+  api-gateway:
+    build: api-gateway/
+    ports:
+      - "8080:8080"
+    networks:
+      - auth
       - task
 
 networks:
