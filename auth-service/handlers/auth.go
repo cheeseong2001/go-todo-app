@@ -36,9 +36,10 @@ func Register(c *gin.Context) {
 	newUser := models.User{
 		Email:    registerCredentials.Email,
 		Password: hashedPassword,
+		Role:     "user",
 	}
 
-	err = repository.DB.QueryRow(`INSERT INTO users (email, password) VALUES ($1, $2) RETURNING id`, newUser.Email, newUser.Password).Scan(&newUser.ID)
+	err = repository.DB.QueryRow(`INSERT INTO users (email, password, role) VALUES ($1, $2, 'user') RETURNING id`, newUser.Email, newUser.Password).Scan(&newUser.ID)
 
 	if err != nil {
 		c.IndentedJSON(http.StatusInternalServerError, gin.H{
@@ -62,7 +63,8 @@ func Login(c *gin.Context) {
 
 	var hashedPassword string
 	var userID int
-	err := repository.DB.QueryRow(`SELECT id, password FROM users WHERE email = $1`, loginCredentials.Email).Scan(&userID, &hashedPassword)
+	var role string
+	err := repository.DB.QueryRow(`SELECT id, password, role FROM users WHERE email = $1`, loginCredentials.Email).Scan(&userID, &hashedPassword, &role)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			c.IndentedJSON(http.StatusUnauthorized, gin.H{
@@ -84,7 +86,7 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	token, err := utils.GenerateJWT(userID)
+	token, err := utils.GenerateJWT(userID, role)
 	if err != nil {
 		c.IndentedJSON(http.StatusUnauthorized, gin.H{
 			"error": "Failed to generate token",
@@ -109,7 +111,7 @@ func ValidateToken(c *gin.Context) {
 		return
 	}
 
-	userID, err := utils.ValidateJWT(request.Token)
+	userID, role, err := utils.ValidateJWT(request.Token)
 	if err != nil {
 		c.IndentedJSON(http.StatusUnauthorized, models.ValidateTokenResponse{
 			Valid: false,
@@ -120,6 +122,7 @@ func ValidateToken(c *gin.Context) {
 
 	c.IndentedJSON(http.StatusBadRequest, models.ValidateTokenResponse{
 		UserID: userID,
+		Role:   role,
 		Valid:  true,
 	})
 }
