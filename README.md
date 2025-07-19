@@ -20,11 +20,12 @@ In the long run:
         - [x] Register
         - [x] Login
         - [x] Generate JWT on successful login
+        - [x] Validate JWT endpoint
     - [ ] Test cases
 
 - [ ] Task-service
     - [ ] API
-        - [x] Middleware for JWT authentication
+        - [x] Middleware for JWT authentication - sends to auth-service for validation
         - [x] Create task
         - [x] List tasks or a specific task
         - [x] Delete task
