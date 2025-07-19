@@ -3,7 +3,9 @@ package repository
 import (
 	"database/sql"
 	"fmt"
+	"os"
 
+	"github.com/cheeseong2001/auth-service/utils"
 	_ "github.com/lib/pq"
 )
 
@@ -29,5 +31,26 @@ func InitDB() error {
 	}
 
 	DB = db
+	return nil
+}
+
+func BootstrapAdminUser() error {
+	adminEmail := os.Getenv("ADMIN_EMAIL")
+	adminPassword := os.Getenv("ADMIN_PASSWORD")
+
+	var count int
+	err := DB.QueryRow(`SELECT COUNT(*) FROM users WHERE email = $1 AND role = 'admin'`, adminEmail).Scan(&count)
+	if err != nil {
+		return fmt.Errorf("error getting admin count in database: %w", err)
+	}
+
+	if count == 0 {
+		hashedAdminPassword, err := utils.HashPassword(adminPassword)
+		if err != nil {
+			return fmt.Errorf("error hashing admin password: %w", err)
+		}
+		DB.Exec(`INSERT INTO users (email, password, role) VALUES ($1, $2, 'admin')`, adminEmail, hashedAdminPassword)
+	}
+
 	return nil
 }

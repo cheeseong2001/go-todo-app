@@ -11,6 +11,12 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+
+	err = repository.BootstrapAdminUser()
+	if err != nil {
+		panic(err)
+	}
+
 	err = repository.DB.Ping()
 	if err != nil {
 		panic(err)
