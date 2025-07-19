@@ -1,7 +1,9 @@
 package utils
 
 import (
+	"errors"
 	"os"
+	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -22,6 +24,11 @@ func ValidateJWT(tokenString string) (int, string, error) {
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok {
 		return 0, "", err
+	}
+
+	// token has expired
+	if float64(time.Now().Unix()) > claims["exp"].(float64) {
+		return 0, "", errors.New("token expired")
 	}
 
 	userIDFloat, ok := claims["user_id"].(float64)
