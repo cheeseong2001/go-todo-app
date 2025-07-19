@@ -1,12 +1,20 @@
 package middleware
 
 import (
+	"bytes"
+	"encoding/json"
 	"net/http"
 	"strings"
 
-	"github.com/cheeseong2001/task-service/utils"
 	"github.com/gin-gonic/gin"
 )
+
+type AuthResponse struct {
+	Valid  bool   `json:"valid"`
+	UserID int    `json:"user_id,omitempty"`
+	Role   string `json:"role,omitempty"`
+	Error  string `json:"error,omitempty"`
+}
 
 func JWTValidateMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -19,16 +27,29 @@ func JWTValidateMiddleware() gin.HandlerFunc {
 		}
 
 		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
-		userID, role, err := utils.ValidateJWT(tokenString)
-		if err != nil {
+		body := map[string]string{"token": tokenString}
+		jsonBody, _ := json.Marshal(body)
+
+		resp, err := http.Post("http://auth-service:8080/auth/validate", "application/json", bytes.NewBuffer(jsonBody))
+		if err != nil || resp.StatusCode != http.StatusOK {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
-				"error": "invalid token",
+				"error": "token validation failed",
+			})
+			return
+		}
+		defer resp.Body.Close()
+
+		var authResponse AuthResponse
+
+		if err := json.NewDecoder(resp.Body).Decode(&authResponse); err != nil {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+				"error": "failed to parse auth response",
 			})
 			return
 		}
 
-		c.Set("user_id", userID)
-		c.Set("role", role)
+		c.Set("user_id", authResponse.UserID)
+		c.Set("role", authResponse.Role)
 		c.Next()
 	}
 }

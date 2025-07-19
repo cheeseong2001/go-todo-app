@@ -120,7 +120,7 @@ func ValidateToken(c *gin.Context) {
 		return
 	}
 
-	c.IndentedJSON(http.StatusBadRequest, models.ValidateTokenResponse{
+	c.IndentedJSON(http.StatusOK, models.ValidateTokenResponse{
 		UserID: userID,
 		Role:   role,
 		Valid:  true,

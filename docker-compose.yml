@@ -10,7 +10,7 @@ services:
     volumes:
       - auth-db-data:/var/lib/postgresql/data
     networks:
-      - auth
+      - auth-net
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
@@ -27,7 +27,8 @@ services:
         condition: service_healthy
         restart: true
     networks:
-      - auth
+      - auth-net
+      - shared-net
       
   task-db:
     image: postgres:latest
@@ -40,7 +41,7 @@ services:
     volumes:
       - task-db-data:/var/lib/postgresql/data
     networks:
-      - task
+      - task-net
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
@@ -57,19 +58,20 @@ services:
         condition: service_healthy
         restart: true
     networks:
-      - task
+      - task-net
+      - shared-net
 
   api-gateway:
     build: ./api-gateway
     ports:
       - "8080:8080"
     networks:
-      - auth
-      - task
+      - shared-net
 
 networks:
-  auth:
-  task:
+  auth-net:
+  task-net:
+  shared-net:
 
 volumes:
   auth-db-data:
