@@ -28,8 +28,15 @@ In the long run:
         - [x] Create task
         - [x] List tasks or a specific task
         - [x] Delete task
-        - [ ] Other features like update task, complete task, adding deadlines
+        - [x] Update task `complete` status
+        - [ ] Other features like update task, adding deadlines
     - [ ] Test cases
+
+- [x] Added Role-based access: `user` or `admin`
+    - [x] Bootstrapping admin user
+    - [x] Limiting endpoint functionality based on role
+
+For role-based access, users can only edit/delete their own tasks. Whereas admins can edit/delete any tasks. The role implementation is currently baked into the auth-db and the claims of JWT during JWT generation.
 
 - [ ] Deployment-related tasks
     - [x] Containerise services
