@@ -19,7 +19,7 @@ func JWTValidateMiddleware() gin.HandlerFunc {
 		}
 
 		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
-		userID, err := utils.ValidateJWT(tokenString)
+		userID, role, err := utils.ValidateJWT(tokenString)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
 				"error": "invalid token",
@@ -28,6 +28,7 @@ func JWTValidateMiddleware() gin.HandlerFunc {
 		}
 
 		c.Set("user_id", userID)
+		c.Set("role", role)
 		c.Next()
 	}
 }

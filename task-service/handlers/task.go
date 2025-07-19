@@ -37,17 +37,34 @@ func CreateTask(c *gin.Context) {
 }
 
 func GetTask(c *gin.Context) {
-	userID, exists := c.Get("user_id")
+	role, exists := c.Get("role")
 	if !exists {
 		c.IndentedJSON(http.StatusInternalServerError, gin.H{
-			"error": "user not found in context",
+			"error": "role not found in context",
 		})
 	}
 
-	rows, err := repository.DB.Query(`
-		SELECT task_id, title, description, completed
+	var query string
+	var rows *sql.Rows
+	var err error
+
+	if role == "admin" { // give admin power to list all tasks
+		query = `SELECT task_id, user_id, title, description, completed
+		FROM tasks;`
+		rows, err = repository.DB.Query(query)
+
+	} else { // give users power to list their own tasks
+		userID, exists := c.Get("user_id")
+		if !exists {
+			c.IndentedJSON(http.StatusInternalServerError, gin.H{
+				"error": "user not found in context",
+			})
+		}
+		query = `SELECT task_id, user_id, title, description, completed
 		FROM tasks
-		WHERE user_id = $1;`, userID)
+		WHERE user_id = $1;`
+		rows, err = repository.DB.Query(query, userID)
+	}
 
 	if err != nil {
 		c.IndentedJSON(http.StatusInternalServerError, gin.H{
@@ -59,7 +76,7 @@ func GetTask(c *gin.Context) {
 	var tasks []models.Task
 	for rows.Next() {
 		var task models.Task
-		if err := rows.Scan(&task.TaskID, &task.Title, &task.Description, &task.Completed); err != nil {
+		if err := rows.Scan(&task.TaskID, &task.UserID, &task.Title, &task.Description, &task.Completed); err != nil {
 			c.IndentedJSON(http.StatusInternalServerError, gin.H{
 				"error": "scan errror",
 			})
