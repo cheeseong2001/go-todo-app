@@ -17,11 +17,17 @@ type CreateTaskResponse struct {
 	TaskID int `json:"task_id"`
 }
 
-type DeleteTaskRequest struct {
-	TaskID int `json:"task_id"`
-}
-
 type DeleteTaskResponse struct {
 	TaskID  int  `json:"task_id"`
 	Success bool `json:"success"`
+}
+
+type UpdateTaskCompletedRequest struct {
+	Completed bool `json:"completed"`
+}
+
+type UpdateTaskCompletedResponse struct {
+	TaskID    int  `json:"task_id"`
+	Completed bool `json:"completed"`
+	Success   bool `json:"success"`
 }

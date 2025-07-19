@@ -26,6 +26,7 @@ func main() {
 		tasks.GET("/", handlers.GetTask)
 		tasks.GET("/:task_id", handlers.GetTaskByID)
 		tasks.DELETE("/:task_id", handlers.DeleteTask)
+		tasks.PATCH("/:task_id/complete", handlers.UpdateTaskComplete)
 	}
 
 	r.Run(":8080")

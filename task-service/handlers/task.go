@@ -18,6 +18,7 @@ func CreateTask(c *gin.Context) {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),
 		})
+		return
 	}
 
 	userID, exists := c.Get("user_id")
@@ -25,6 +26,7 @@ func CreateTask(c *gin.Context) {
 		c.IndentedJSON(http.StatusInternalServerError, gin.H{
 			"error": "user not found in context",
 		})
+		return
 	}
 
 	var taskID int
@@ -42,6 +44,7 @@ func GetTask(c *gin.Context) {
 		c.IndentedJSON(http.StatusInternalServerError, gin.H{
 			"error": "role not found in context",
 		})
+		return
 	}
 
 	var query string
@@ -59,6 +62,7 @@ func GetTask(c *gin.Context) {
 			c.IndentedJSON(http.StatusInternalServerError, gin.H{
 				"error": "user not found in context",
 			})
+			return
 		}
 		query = `SELECT task_id, user_id, title, description, completed
 		FROM tasks
@@ -70,6 +74,7 @@ func GetTask(c *gin.Context) {
 		c.IndentedJSON(http.StatusInternalServerError, gin.H{
 			"error": "database error",
 		})
+		return
 	}
 	defer rows.Close()
 
@@ -95,6 +100,7 @@ func GetTaskByID(c *gin.Context) {
 		c.IndentedJSON(http.StatusInternalServerError, gin.H{
 			"error": "user not found in context",
 		})
+		return
 	}
 
 	var task models.Task
@@ -134,6 +140,7 @@ func DeleteTask(c *gin.Context) {
 		c.IndentedJSON(http.StatusInternalServerError, gin.H{
 			"error": "user not found in context",
 		})
+		return
 	}
 
 	taskID, err := strconv.Atoi(c.Param("task_id"))
@@ -152,22 +159,85 @@ func DeleteTask(c *gin.Context) {
 		return
 	}
 
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		c.IndentedJSON(http.StatusInternalServerError, gin.H{
-			"error": "could not determine result",
-		})
-		return
-	}
+	rowsAffected, _ := result.RowsAffected()
 
 	if rowsAffected == 0 {
 		c.IndentedJSON(http.StatusNotFound, gin.H{
 			"error": "task_id not found",
 		})
+		return
 	}
 
 	c.IndentedJSON(http.StatusOK, models.DeleteTaskResponse{
 		TaskID:  taskID,
 		Success: true,
+	})
+}
+
+func UpdateTaskComplete(c *gin.Context) {
+	role, exists := c.Get("role")
+	if !exists {
+		c.IndentedJSON(http.StatusInternalServerError, gin.H{
+			"error": "role not found in context",
+		})
+		return
+	}
+
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.IndentedJSON(http.StatusInternalServerError, gin.H{
+			"error": "user not found in context",
+		})
+		return
+	}
+
+	taskID, err := strconv.Atoi(c.Param("task_id"))
+	if err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{
+			"error": "invalid task_id",
+		})
+		return
+	}
+
+	var updateTaskCompletedReq models.UpdateTaskCompletedRequest
+
+	if err = c.ShouldBindJSON(&updateTaskCompletedReq); err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	var query string
+	var result sql.Result
+
+	if role == "admin" {
+		query = `UPDATE tasks SET completed = $1 WHERE task_id = $2`
+		result, err = repository.DB.Exec(query, updateTaskCompletedReq.Completed, taskID)
+	} else {
+		query = `UPDATE tasks SET completed = $1 WHERE user_id = $2 AND task_id = $3`
+		result, err = repository.DB.Exec(query, updateTaskCompletedReq.Completed, userID, taskID)
+	}
+
+	if err != nil {
+		c.IndentedJSON(http.StatusInternalServerError, gin.H{
+			"error": "failed to update task",
+		})
+		return
+	}
+
+	rowsAffected, _ := result.RowsAffected()
+
+	if rowsAffected == 0 {
+		c.IndentedJSON(http.StatusNotFound, gin.H{
+			"error": "task_id not found",
+		})
+		return
+	}
+
+	c.IndentedJSON(http.StatusOK, models.UpdateTaskCompletedResponse{
+		TaskID:    taskID,
+		Completed: updateTaskCompletedReq.Completed,
+		Success:   true,
 	})
 }
